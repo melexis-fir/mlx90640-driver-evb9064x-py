@@ -64,7 +64,7 @@ def test_dump_frame():
     assert 10 <= ta <= 40
 
     n = len(to)
-    assert n == (16*12)
+    assert n == (32*24)
 
     average_to = 0
     for t in to:
