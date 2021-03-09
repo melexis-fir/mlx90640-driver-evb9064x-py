@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Test Report</title>
+    <style>body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.log {
+  background-color: #e6e6e6;
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  height: 230px;
+  overflow-y: scroll;
+  padding: 5px;
+  white-space: pre-wrap;
+}
+.log:only-child {
+  height: inherit;
+}
+
+div.image {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.image img {
+  width: 320px;
+}
+
+div.video {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.video video {
+  overflow: hidden;
+  width: 320px;
+  height: 240px;
+}
+
+.collapsed {
+  display: none;
+}
+
+.expander::after {
+  content: " (show details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.collapser::after {
+  content: " (hide details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+
+.sort-icon {
+  font-size: 0px;
+  float: left;
+  margin-right: 5px;
+  margin-top: 5px;
+  /*triangle*/
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+}
+.inactive .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #E6E6E6;
+}
+.asc.active .sort-icon {
+  /*finish triangle*/
+  border-bottom: 8px solid #999;
+}
+.desc.active .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #999;
+}
+</style></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++)
+        filterItems[i].hidden = false;
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>app-tests-win10-pc-report.html</h1>
+    <p>Report generated on 09-Mar-2021 at 11:59:11 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.1.1</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>CI</td>
+        <td>true</td></tr>
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "0.13.1", "py": "1.10.0", "pytest": "6.2.2"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Windows-10-10.0.19041-SP0</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"html": "3.1.1", "metadata": "1.11.0", "ordering": "0.6"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.9.1</td></tr>
+      <tr>
+        <td>homepage</td>
+        <td><a href="https://github.com/melexis-fir/mlx90640-driver-evb9064x-py" target="_blank">https://github.com/melexis-fir/mlx90640-driver-evb9064x-py</a></td></tr>
+      <tr>
+        <td>host_hardware</td>
+        <td>win10 pc</td></tr>
+      <tr>
+        <td>i2c_port</td>
+        <td>auto</td></tr></table>
+    <h2>Summary</h2>
+    <p>5 tests ran in 1.19 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">5 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">0 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/app_testing/test_init.py::test_version</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>mlx90640-driver version: 1.1.1
+mlx90640-driver-evb9064x version: 0.1.0
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/app_testing/test_init.py::test_class_declared</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/app_testing/test_init.py::test_i2c_init</td>
+          <td class="col-duration">0.17</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/app_testing/test_init.py::test_refresh_rate_setting</td>
+          <td class="col-duration">0.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/app_testing/test_init.py::test_dump_frame</td>
+          <td class="col-duration">0.82</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>04: 18.40,17.29,20.40,18.81,19.77,17.53,18.98,18.76,18.77,19.00,19.21,18.46,19.74,18.16,19.39,18.39,18.57,18.75,19.47,19.32,19.71,18.42,19.35,18.31,18.97,17.50,19.27,18.80,18.63,17.14,18.17,17.71,17.45,18.44,18.02,19.81,18.94,18.48,19.18,19.18,18.96,19.44,19.20,19.67,18.88,19.33,18.90,19.79,18.68,19.49,19.20,19.89,18.81,18.85,19.09,18.71,17.80,19.29,19.03,19.25,17.32,18.61,17.32,18.98,18.98,17.56,19.47,19.59,19.31,18.74,18.90,18.76,19.39,18.32,19.31,19.67,19.58,18.72,19.89,19.59,18.87,18.64,20.17,19.37,19.56,18.60,20.28,18.90,20.30,19.05,19.57,18.40,18.96,17.66,19.21,17.85,18.05,18.82,19.20,19.25,18.27,19.39,18.87,19.58,18.91,19.73,19.21,19.57,18.90,19.49,19.81,20.10,18.00,19.73,19.90,20.25,18.44,19.51,18.60,19.41,18.32,19.62,18.87,19.47,18.61,18.82,18.13,18.81,18.82,18.06,19.85,19.02,19.68,18.76,19.23,19.45,19.46,18.44,19.90,18.91,19.80,19.03,19.94,19.76,19.54,19.52,20.06,19.04,19.65,18.64,20.04,19.27,19.57,18.50,19.43,19.47,19.36,17.85,19.59,17.79,18.15,19.31,19.26,18.93,18.24,19.58,19.39,20.01,18.79,19.39,19.42,19.65,18.94,20.29,19.68,20.06,18.83,19.27,19.58,20.09,18.58,19.73,19.56,20.37,18.43,19.86,18.73,19.40,17.74,18.92,18.79,19.66,19.44,18.73,19.86,18.92,19.16,18.42,19.57,19.04,20.07,19.53,19.66,19.43,19.98,19.29,19.96,19.49,19.98,18.99,19.64,19.57,18.85,18.97,20.09,19.20,19.25,18.51,20.07,19.20,19.26,18.71,19.01,18.72,18.52,19.18,18.62,20.20,18.62,19.67,18.50,20.33,18.59,20.04,18.81,19.72,19.51,19.96,19.50,19.95,18.94,19.46,19.74,19.65,18.77,19.65,19.22,19.68,18.74,19.80,18.94,19.93,18.09,19.92,18.69,18.60,19.16,18.67,19.62,19.40,19.82,18.58,19.45,20.13,19.69,19.29,19.88,19.08,19.52,18.81,19.87,19.47,19.82,18.93,19.84,19.47,18.92,18.35,19.41,18.87,19.56,18.70,19.44,19.34,18.94,18.30,19.81,18.65,18.53,20.02,19.34,19.73,18.64,19.52,19.58,19.84,18.97,20.17,20.00,20.09,18.69,19.30,18.72,19.74,19.35,19.42,19.58,20.45,18.75,19.91,18.75,19.90,18.46,19.94,18.92,19.05,18.60,19.06,18.83,19.43,20.56,19.67,19.72,20.89,20.32,19.65,21.03,19.98,20.44,19.54,20.20,20.22,20.36,19.63,21.18,20.34,20.67,19.55,20.12,20.13,20.00,19.44,20.42,20.12,20.27,19.50,20.29,19.27,19.27,18.40,19.26,18.42,17.85,20.75,19.81,20.61,19.42,20.41,20.51,20.87,19.38,21.15,20.84,20.69,19.52,20.61,20.01,21.29,20.02,20.39,20.72,20.72,19.67,20.47,19.92,21.13,19.18,20.15,20.18,20.76,19.13,20.15,18.93,20.49,19.60,18.59,20.72,20.70,20.24,18.76,20.76,19.52,20.80,19.68,20.76,20.23,20.93,20.10,20.84,19.96,20.87,19.99,20.96,20.77,20.38,20.22,20.33,19.90,20.29,20.30,20.83,19.57,20.76,19.27,20.51,20.07,18.97,19.73,20.15,20.16,18.89,20.48,19.47,20.76,19.92,20.17,19.93,21.42,19.75,20.93,20.75,20.74,19.32,21.14,20.83,21.05,19.70,20.67,20.03,21.23,19.20,20.78,19.54,20.62,19.61,20.61,19.50,21.21,19.34,18.51,20.13,19.33,19.23,19.82,20.14,20.37,20.67,19.84,20.48,20.41,19.82,20.33,20.59,19.56,21.02,20.18,21.11,21.16,20.86,19.76,20.03,20.39,19.87,18.89,21.03,20.31,20.72,18.85,20.04,19.73,18.41,20.36,19.58,20.98,18.84,20.32,19.45,20.29,19.63,20.53,20.03,20.13,19.33,20.61,20.11,20.15,19.83,20.63,20.30,21.03,19.85,20.43,20.46,21.19,19.37,20.30,19.93,19.97,19.53,20.59,19.64,20.88,19.67,20.03,20.36,20.64,20.13,19.81,20.26,20.45,20.95,19.46,20.97,20.74,21.05,19.88,20.69,20.03,21.31,20.30,20.69,20.51,20.72,19.95,20.92,20.47,19.94,19.78,20.64,20.50,20.75,19.38,20.28,20.57,18.72,19.43,19.32,19.59,18.42,19.85,19.95,20.57,18.91,19.80,20.69,20.84,19.45,20.53,20.05,21.19,19.54,21.10,20.57,20.93,19.66,20.22,19.31,20.57,19.59,20.06,20.31,20.37,19.36,19.87,18.75,20.17,19.85,18.19,20.27,19.26,19.66,19.60,19.40,19.63,20.15,19.21,20.31,19.38,20.43,19.52,20.51,19.57,19.40,19.54,20.40,20.03,19.90,18.76,20.33,20.15,20.18,19.06,19.70,19.63,19.18,18.72,20.09,19.12,17.55,19.39,19.19,20.07,17.96,19.74,19.65,20.53,19.39,20.08,19.60,20.80,18.98,20.37,19.45,20.02,19.28,20.57,19.54,20.00,18.81,19.78,19.25,20.41,19.26,20.36,19.32,20.08,18.76,18.79,19.48,19.88,19.87,19.02,19.33,19.35,19.65,18.39,20.15,20.07,20.13,19.39,20.48,19.52,20.02,19.34,20.28,19.74,19.46,19.27,20.40,19.86,20.08,19.08,19.60,19.61,19.91,19.18,20.24,19.65,19.97,18.78,19.80,18.98,18.02,19.19,19.42,20.41,18.76,19.18,19.83,19.95,18.72,19.88,19.95,20.40,19.12,19.84,19.61,20.22,19.13,19.73,20.29,19.95,19.75,19.55,19.45,20.47,19.20,19.63,19.03,19.90,17.95,19.71,19.14,19.79,18.83,18.83,18.55,20.10,20.30,20.06,19.58,20.04,20.02,18.76,20.12,20.11,19.96,18.86,20.34,19.69,20.14,19.28,19.77,19.97,19.92,19.58,20.18,20.26,19.55,18.33,19.52,19.22,19.31,19.08,19.04,18.40,18.08,19.91,20.00,20.80,18.74,19.99,19.01,20.19,18.83,20.42,19.80,20.24,19.63,19.81,20.26,20.63,18.05,19.82,19.29,20.08,19.41,19.93,18.86,19.93,18.77,19.50,19.16,20.44,17.95,20.83,18.64,20.08
+<br/></div></td></tr></tbody></table></body></html>
