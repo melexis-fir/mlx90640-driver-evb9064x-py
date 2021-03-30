@@ -222,12 +222,12 @@ http://man7.org/linux/man-pages/man3/termios.3.html
   new_port_settings.c_cflag = cbits | cpar | bstop | CLOCAL | CREAD;
   if(flowctrl)
   {
-#ifdef CNEW_RTSCTS
-#define FLOW_FLAG CNEW_RTSCTS
-#elif defined CRTSCTS
-#define FLOW_FLAG CRTSCTS
-#endif
+#ifndef CRTSCTS
+    printf ("Sorry no flow control supported\n");
+    exit(1);
+#else
     new_port_settings.c_cflag |= FLOW_FLAG;
+#endif
   }
   new_port_settings.c_iflag = ipar;
   new_port_settings.c_oflag = 0;
