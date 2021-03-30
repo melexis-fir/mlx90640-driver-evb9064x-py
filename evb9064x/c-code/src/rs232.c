@@ -226,7 +226,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
     printf ("Sorry no flow control supported\n");
     exit(1);
 #else
-    new_port_settings.c_cflag |= FLOW_FLAG;
+    new_port_settings.c_cflag |= CRTSCTS;
 #endif
   }
   new_port_settings.c_iflag = ipar;
