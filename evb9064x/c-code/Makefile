@@ -40,9 +40,9 @@ main.o: main.c
 	$(CC) -c -o $@ $(CFLAGS) $^
 
 serial_debug.o: serial_debug.c
-	$(CC) -c -o $@ $(CFLAGS) $^
+	$(CC) -c -o $@ $(CFLAGS) -Isrc $^
 
-src/m_sp.o: src/m_sp.c
+src/rs232.o: src/rs232.c
 	$(CC) -c -o $@ $(CFLAGS) $^
 
 src/evb9064x.o: src/evb9064x.c
@@ -51,18 +51,20 @@ src/evb9064x.o: src/evb9064x.c
 src/MLX90640_I2C_Driver_evb9064x.o: src/MLX90640_I2C_Driver_evb9064x.c
 	$(CC) -c -o $@ $(CFLAGS) $^
 
-main: main.o src/MLX90640_I2C_Driver_evb9064x.o src/m_sp.o src/evb9064x.o
+
+main: main.o src/MLX90640_I2C_Driver_evb9064x.o src/rs232.o src/evb9064x.o
 	$(CC) -o $@ $^ -lm -Wl,-rpath=$(LIB_RESULT_DIR)/$(MACHINE) -L$(LIB_RESULT_DIR)/$(MACHINE) $(DEP_LIBS)
 
-serial_debug: serial_debug.o src/m_sp.o
+serial_debug: serial_debug.o src/rs232.o
 	$(CC) -o $@ $^
 
-$(SHARED_LIB_FILE): src/MLX90640_I2C_Driver_evb9064x.o src/m_sp.o src/evb9064x.o
+
+$(SHARED_LIB_FILE): src/MLX90640_I2C_Driver_evb9064x.o src/rs232.o src/evb9064x.o
 	$(CC) -shared -o $@ $^ -L$(LIB_RESULT_DIR)/$(MACHINE) $(DEP_LIBS) -Wl,-rpath=$(LIB_RESULT_DIR)/$(MACHINE)
 	@mkdir -p $(LIB_RESULT_DIR)/$(MACHINE)
 	@cp -fv $@ $(LIB_RESULT_DIR)/$(MACHINE)
 
-$(STATIC_LIB_FILE): src/MLX90640_I2C_Driver_evb9064x.o src/m_sp.o src/evb9064x.o
+$(STATIC_LIB_FILE): src/MLX90640_I2C_Driver_evb9064x.o src/rs232.o src/evb9064x.o
 	$(AR) rcu $@ $<
 	@mkdir -p $(LIB_RESULT_DIR)/$(MACHINE)
 	@cp -fv $@ $(LIB_RESULT_DIR)/$(MACHINE)

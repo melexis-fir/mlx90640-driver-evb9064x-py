@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include "m_sp.h"
+#include "rs232.h"
 
 // debugging terminal:
 //
@@ -16,16 +16,26 @@
 
 int main(void)
 {
-  struct MSpHandle *sp = m_spOpen("COM6", M_SP_115200, M_SP_ONE, M_SP_NONE, M_SP_OFF);
-  //struct MSpHandle *sp = m_spOpen("/dev/ttyACM0", M_SP_115200, M_SP_ONE, M_SP_NONE, M_SP_OFF);
-  char buffer[256];
+
+  char mode[]={'8','N','1',0};
+  if(RS232_OpenComport(5, 115200, mode, 0))
+  {
+    printf("Can not open comport\n");
+    return(0);
+  }
+
+  RS232_flushRXTX(5);
+
+  unsigned char buffer[256];
   memset(buffer, 0, sizeof(buffer));
   buffer[0] = 0x01;
   buffer[1] = 0x01;
   buffer[2] = 0xFE;
-  int r = m_spSend(sp, buffer, 3);
+
+  int r = RS232_SendBuf(5, buffer, 3);
   printf ("send: %d\n", r);
-  r = m_spReceive(sp, buffer, 256);
+  usleep(100000);
+  r = RS232_PollComport(5, buffer, 256);
   printf ("receive: %d\n", r);
 
   printf ("msg: '%s'\n", buffer);
@@ -33,6 +43,6 @@ int main(void)
   {
     printf ("%2d %02X '%c'\n", i, buffer[i], buffer[i]);
   }
-  m_spClose(sp);
+  RS232_CloseComport(5);
   return 0;
 }

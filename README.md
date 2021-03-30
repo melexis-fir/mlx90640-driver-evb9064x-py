@@ -6,6 +6,12 @@
 
 ![platform](https://img.shields.io/badge/platform-Win10%20PC%20%7C%20linux%20PC%20%7C%20rasberry%20pi%204%20%7C%20Jetson%20Nano%20%7C%20beagle%20bone-lightgrey)  
 
+# Warning: not stable yet.
+- Update is commit, but only validated on windows OS.  
+- Currently only COM1 .. COM32 are supported.  
+- Linux based OSes are not checked/validated.
+
+
 MLX90640 is a thermal camera (32x24 pixels) using Far InfraRed radiation from objects to measure the object temperature.  
 https://www.melexis.com/mlx90640  
 The python package "[mlx90640-driver](https://github.com/melexis-fir/mlx90640-driver-py)" driver interfaces the MLX90640 and aims to facilitate rapid prototyping.
