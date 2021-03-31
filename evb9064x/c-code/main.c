@@ -15,8 +15,8 @@ int main(void)
 {
   struct MLX90640DriverRegister_t *driver = MLX90640_get_register_evb9064x();
   printf ("driver name: '%s'\n", driver->name_);
-  MLX90640_I2CInit_evb9064x("mlx://evb:9064x/COM6");
-  // MLX90640_I2CInit_evb9064x("mlx://evb:9064x/dev/ttyACM0");
+  // MLX90640_I2CInit_evb9064x("mlx://evb:9064x/COM6");
+  MLX90640_I2CInit_evb9064x("mlx://evb:9064x/dev/ttyACM0");
 
 
   fflush(stdout);
@@ -24,7 +24,6 @@ int main(void)
   uint16_t data[832];
   memset(data, 0, sizeof(data));
   usleep(100000);
-  // MLX90640_I2CRead_evb9064x(MLX_I2C_ADDR, 0x2400, 832, data);
   MLX90640_I2CRead_evb9064x(MLX_I2C_ADDR, 0x2400, 832, data);
   for (int i = 0; i < 832; i+=16)
   {

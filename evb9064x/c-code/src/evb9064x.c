@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <string.h>
 
@@ -6,6 +7,10 @@
 
 #include "rs232.h"
 #include "evb9064x.h"
+
+#include <sys/time.h>
+
+
 
 enum Evb9064x_CMD
 {
@@ -141,8 +146,28 @@ evb9064x_receive(struct Evb9064x_t *handle, uint8_t *data, uint16_t max_size, ui
     return -2;
   }
 
-  r = RS232_PollComport(handle->port_number_, data, n);
-  if (r != n) return -4;
+  // read until we received n bytes.
+  int bytes_read = 0;
+  struct timeval tv;
+  gettimeofday(&tv,NULL);
+  unsigned long start = 1000000 * tv.tv_sec + tv.tv_usec;
+  while (bytes_read != n)
+  {
+    r = RS232_PollComport(handle->port_number_, &data[bytes_read], n - bytes_read);
+    if (r > 0)
+    {
+      bytes_read += r;
+    }
+    gettimeofday(&tv,NULL);
+    unsigned long now = 1000000 * tv.tv_sec + tv.tv_usec;
+    if ((now - start) > 200000) // > 200ms
+    {
+      return -6; // timeout!
+    }
+  }
+  if (bytes_read != n) return -4;
+
+  // now check crc.
   uint8_t crc_received = 0;
   r = RS232_PollComport(handle->port_number_, &crc_received, 1);
   if (r != 1) return -5;

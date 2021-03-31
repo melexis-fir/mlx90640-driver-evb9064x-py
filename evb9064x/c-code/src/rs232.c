@@ -34,13 +34,17 @@
 
 #if defined(__linux__) || defined(__FreeBSD__)   /* Linux & FreeBSD */
 
+
+#include <unistd.h>
+#include <stdlib.h>
+
 #define RS232_PORTNR  38
 
 
-int Cport[RS232_PORTNR],
+static int Cport[RS232_PORTNR],
     error;
 
-struct termios new_port_settings,
+static struct termios new_port_settings,
        old_port_settings[RS232_PORTNR];
 
 const char *comports[RS232_PORTNR]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2","/dev/ttyS3","/dev/ttyS4","/dev/ttyS5",
@@ -194,7 +198,7 @@ http://pubs.opengroup.org/onlinepubs/7908799/xsh/termios.h.html
 http://man7.org/linux/man-pages/man3/termios.3.html
 */
 
-  Cport[comport_number] = open(comports[comport_number], O_RDWR | O_NOCTTY | O_NDELAY);
+  Cport[comport_number] = open(comports[comport_number], O_RDWR | O_NOCTTY);
   if(Cport[comport_number]==-1)
   {
     perror("unable to open comport ");
@@ -232,7 +236,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
   new_port_settings.c_iflag = ipar;
   new_port_settings.c_oflag = 0;
   new_port_settings.c_lflag = 0;
-  new_port_settings.c_cc[VMIN] = 1;      /* block untill n bytes are received */
+  new_port_settings.c_cc[VMIN] = 0;      /* block untill n bytes are received */
   new_port_settings.c_cc[VTIME] = 1;     /* block untill a timer expires (n * 100 mSec.) */
 
   cfsetispeed(&new_port_settings, baudr);
@@ -504,7 +508,7 @@ void RS232_flushRXTX(int comport_number)
 
 #define RS232_PORTNR  32
 
-HANDLE Cport[RS232_PORTNR];
+static HANDLE Cport[RS232_PORTNR];
 
 
 const char *comports[RS232_PORTNR]={"\\\\.\\COM1",  "\\\\.\\COM2",  "\\\\.\\COM3",  "\\\\.\\COM4",
@@ -516,7 +520,7 @@ const char *comports[RS232_PORTNR]={"\\\\.\\COM1",  "\\\\.\\COM2",  "\\\\.\\COM3
                                     "\\\\.\\COM25", "\\\\.\\COM26", "\\\\.\\COM27", "\\\\.\\COM28",
                                     "\\\\.\\COM29", "\\\\.\\COM30", "\\\\.\\COM31", "\\\\.\\COM32"};
 
-char mode_str[128];
+static char mode_str[128];
 
 
 int RS232_OpenComport(int comport_number, int baudrate, const char *mode, int flowctrl)

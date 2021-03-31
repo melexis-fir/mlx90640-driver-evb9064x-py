@@ -59,6 +59,11 @@ serial_debug: serial_debug.o src/rs232.o
 	$(CC) -o $@ $^
 
 
+main_shared: main.o
+	$(CC) -o $@ $^ -lm -lmlx90640_driver_evb9064x -Wl,-rpath=$(LIB_RESULT_DIR)/$(MACHINE) -L$(LIB_RESULT_DIR)/$(MACHINE) $(DEP_LIBS)
+
+
+
 $(SHARED_LIB_FILE): src/MLX90640_I2C_Driver_evb9064x.o src/rs232.o src/evb9064x.o
 	$(CC) -shared -o $@ $^ -L$(LIB_RESULT_DIR)/$(MACHINE) $(DEP_LIBS) -Wl,-rpath=$(LIB_RESULT_DIR)/$(MACHINE)
 	@mkdir -p $(LIB_RESULT_DIR)/$(MACHINE)

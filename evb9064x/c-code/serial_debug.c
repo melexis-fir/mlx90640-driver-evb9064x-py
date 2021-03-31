@@ -17,14 +17,16 @@
 int main(void)
 {
 
+  int port = RS232_GetPortnr("/dev/ttyACM0");
+
   char mode[]={'8','N','1',0};
-  if(RS232_OpenComport(5, 115200, mode, 0))
+  if(RS232_OpenComport(port, 115200, mode, 0))
   {
     printf("Can not open comport\n");
     return(0);
   }
 
-  RS232_flushRXTX(5);
+  RS232_flushRXTX(port);
 
   unsigned char buffer[256];
   memset(buffer, 0, sizeof(buffer));
@@ -32,10 +34,10 @@ int main(void)
   buffer[1] = 0x01;
   buffer[2] = 0xFE;
 
-  int r = RS232_SendBuf(5, buffer, 3);
+  int r = RS232_SendBuf(port, buffer, 3);
   printf ("send: %d\n", r);
-  usleep(100000);
-  r = RS232_PollComport(5, buffer, 256);
+  // usleep(100000);
+  r = RS232_PollComport(port, buffer, 256);
   printf ("receive: %d\n", r);
 
   printf ("msg: '%s'\n", buffer);
@@ -43,6 +45,6 @@ int main(void)
   {
     printf ("%2d %02X '%c'\n", i, buffer[i], buffer[i]);
   }
-  RS232_CloseComport(5);
+  RS232_CloseComport(port);
   return 0;
 }
