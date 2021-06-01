@@ -39,6 +39,7 @@ int main(void)
   uint16_t control_register1;
   int value;
   value = (refresh_rate & 0x07)<<7;
+
     
   MLX90640_I2CRead_evb9064x(MLX_I2C_ADDR, 0x800D, 1, &control_register1);
   printf ("original refresh_rate: %d\n", (control_register1 >> 7) & 0x07);

@@ -93,7 +93,7 @@ evb9064x_send(struct Evb9064x_t *handle, uint8_t *data, uint16_t size)
   {
     return -1; // nothing to send!
   }
-  if (size > 253)
+  if (size > 252)
   {
     return -2; // too long
   }
@@ -106,13 +106,13 @@ evb9064x_send(struct Evb9064x_t *handle, uint8_t *data, uint16_t size)
   buffer[0] = (uint8_t)size;
   memcpy(&buffer[1], data, size);
   buffer[size+1] = crc;
+  buffer[size+2] = '\n'; // causes to 'flush' the output buffer!
+  // printf("send - size: %d\n", size);
 
   RS232_flushRXTX(handle->port_number_);
-  RS232_SendBuf(handle->port_number_, buffer, size+2);
+  RS232_SendBuf(handle->port_number_, buffer, size+3);
   return 0;
 }
-
-
 
 
 int
@@ -170,6 +170,9 @@ evb9064x_receive(struct Evb9064x_t *handle, uint8_t *data, uint16_t max_size, ui
   // now check crc.
   uint8_t crc_received = 0;
   r = RS232_PollComport(handle->port_number_, &crc_received, 1);
+
+  usleep(60000); // force no new send during 60ms after this command!
+
   if (r != 1) return -5;
 
   crc = mlx_crc(crc, data, n);
