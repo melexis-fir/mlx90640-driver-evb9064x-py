@@ -325,6 +325,7 @@ int RS232_SendBuf(int comport_number, unsigned char *buf, int size)
       return -1;
     }
   }
+  fsync(Cport[comport_number]);
 
   return(n);
 }

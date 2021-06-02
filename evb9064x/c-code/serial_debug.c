@@ -33,10 +33,10 @@ int main(void)
   buffer[0] = 0x01;
   buffer[1] = 0x01;
   buffer[2] = 0xFE;
-  buffer[3] = '\0';
+  buffer[3] = '\n';
 
   int r = RS232_SendBuf(port, buffer, 4);
-  printf ("send: %d\n", r);
+  printf ("send: %d %d\n", r, (int)(buffer[3]));
   // usleep(100000);
   memset(buffer, 0, sizeof(buffer));
   r = RS232_PollComport(port, buffer, 256);
@@ -47,18 +47,34 @@ int main(void)
   {
     printf ("%2d %02X '%c'\n", i, buffer[i], buffer[i]);
   }
-
-
-  // usleep(100000); // wait between commands!
+  usleep(100000); // wait after initial command!
 
 
   memset(buffer, 0, sizeof(buffer));
   buffer[0] = 0x01;
   buffer[1] = 0x01;
   buffer[2] = 0xFE;
-  buffer[3] = '\0';
 
-  r = RS232_SendBuf(port, buffer, 4);
+  r = RS232_SendBuf(port, buffer, 3);
+  printf ("send: %d\n", r);
+  memset(buffer, 0, sizeof(buffer));
+  r = RS232_PollComport(port, buffer, 256);
+  printf ("receive: %d\n", r);
+
+  printf ("msg: '%s'\n", buffer);
+  for (int i = 0; i < r; ++i)
+  {
+    printf ("%2d %02X '%c'\n", i, buffer[i], buffer[i]);
+  }
+
+  // no wait between commands!
+
+  memset(buffer, 0, sizeof(buffer));
+  buffer[0] = 0x01;
+  buffer[1] = 0x01;
+  buffer[2] = 0xFE;
+
+  r = RS232_SendBuf(port, buffer, 3);
   printf ("send: %d\n", r);
   memset(buffer, 0, sizeof(buffer));
   r = RS232_PollComport(port, buffer, 256);

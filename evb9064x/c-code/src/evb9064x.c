@@ -10,6 +10,7 @@
 
 #include <sys/time.h>
 
+int evb9064x_initial_command(struct Evb9064x_t *handle);
 
 
 enum Evb9064x_CMD
@@ -53,6 +54,8 @@ evb9064x_open(const char *serial_port)
 
   RS232_flushRXTX(handle->port_number_);
 
+  evb9064x_initial_command(handle);
+
   char buffer[256];
   evb9064x_get_hardware_id(handle, buffer, 256);
   printf("buffer: '%s'\n", buffer);
@@ -93,7 +96,7 @@ evb9064x_send(struct Evb9064x_t *handle, uint8_t *data, uint16_t size)
   {
     return -1; // nothing to send!
   }
-  if (size > 252)
+  if (size > 253)
   {
     return -2; // too long
   }
@@ -106,11 +109,9 @@ evb9064x_send(struct Evb9064x_t *handle, uint8_t *data, uint16_t size)
   buffer[0] = (uint8_t)size;
   memcpy(&buffer[1], data, size);
   buffer[size+1] = crc;
-  buffer[size+2] = '\0'; // causes to 'flush' the output buffer!
-  // printf("send - size: %d\n", size);
 
   RS232_flushRXTX(handle->port_number_);
-  RS232_SendBuf(handle->port_number_, buffer, size+3);
+  RS232_SendBuf(handle->port_number_, buffer, size+2);
   return 0;
 }
 
@@ -171,8 +172,6 @@ evb9064x_receive(struct Evb9064x_t *handle, uint8_t *data, uint16_t max_size, ui
   uint8_t crc_received = 0;
   r = RS232_PollComport(handle->port_number_, &crc_received, 1);
 
-  // usleep(60000); // force no new send during 60ms after this command!
-
   if (r != 1) return -5;
 
   crc = mlx_crc(crc, data, n);
@@ -183,6 +182,26 @@ evb9064x_receive(struct Evb9064x_t *handle, uint8_t *data, uint16_t max_size, ui
     return -3;
   }
 
+  return 0;
+}
+
+
+int
+evb9064x_initial_command(struct Evb9064x_t *handle)
+{ /* a dummy command execution, only needed the very first time after EVB is plugged in */
+  uint8_t buffer[256];
+  uint16_t size = 0;
+  memset(buffer, 0, sizeof(buffer));
+
+  buffer[1-1] = 1;
+  buffer[1+0] = CMD_GetHardwareID;
+  buffer[1+1] = mlx_crc(0, &buffer[1], 1);
+  buffer[1+2] = '\n'; /* this character is the abnormalty here! */
+
+  RS232_flushRXTX(handle->port_number_);
+  RS232_SendBuf(handle->port_number_, buffer, 4);
+  evb9064x_receive(handle, buffer, sizeof(buffer), &size);
+  usleep(100000);
   return 0;
 }
 
