@@ -189,8 +189,7 @@ evb9064x_receive(struct Evb9064x_t *handle, uint8_t *data, uint16_t max_size, ui
 int
 evb9064x_initial_command(struct Evb9064x_t *handle)
 { /* a dummy command execution, only needed the very first time after EVB is plugged in */
-  uint8_t buffer[256];
-  uint16_t size = 0;
+  uint8_t buffer[16];
   memset(buffer, 0, sizeof(buffer));
 
   buffer[1-1] = 1;
@@ -200,8 +199,8 @@ evb9064x_initial_command(struct Evb9064x_t *handle)
 
   RS232_flushRXTX(handle->port_number_);
   RS232_SendBuf(handle->port_number_, buffer, 4);
-  evb9064x_receive(handle, buffer, sizeof(buffer), &size);
   usleep(100000);
+  RS232_flushRXTX(handle->port_number_);
   return 0;
 }
 
