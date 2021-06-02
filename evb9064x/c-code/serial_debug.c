@@ -33,7 +33,7 @@ int main(void)
   buffer[0] = 0x01;
   buffer[1] = 0x01;
   buffer[2] = 0xFE;
-  buffer[3] = '\r';
+  buffer[3] = '\0';
 
   int r = RS232_SendBuf(port, buffer, 4);
   printf ("send: %d\n", r);
@@ -49,14 +49,14 @@ int main(void)
   }
 
 
-  usleep(100000); // wait between commands!
+  // usleep(100000); // wait between commands!
 
 
   memset(buffer, 0, sizeof(buffer));
   buffer[0] = 0x01;
   buffer[1] = 0x01;
   buffer[2] = 0xFE;
-  buffer[3] = '\r';
+  buffer[3] = '\0';
 
   r = RS232_SendBuf(port, buffer, 4);
   printf ("send: %d\n", r);
