@@ -197,8 +197,8 @@ jobs:
     if:   github.event_name == 'release' && github.event.action == 'created'
     needs:
       - test-on-hardware-raspberry-pi-4
-      # - test-on-hardware-jetson-nano
-      # - test-on-hardware-ubuntu
+      - test-on-hardware-jetson-nano
+      - test-on-hardware-ubuntu
       - test-on-hardware-win10
     steps:
     - uses: actions/checkout@v2
